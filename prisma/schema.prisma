@@ -44,6 +44,7 @@ model User {
   emailVerified DateTime?
   image         String?
   username      String?   @unique
+  password      String?
   bio           String?
   website       String?
   location      String?
@@ -58,6 +59,7 @@ model User {
   followers     Follow[]  @relation("UserFollowers")
   following     Follow[]  @relation("UserFollowing")
   notifications Notification[]
+  sentNotifications Notification[] @relation("NotificationFromUser")
 
   @@map("users")
 }
@@ -160,16 +162,18 @@ model Follow {
 }
 
 model Notification {
-  id        String            @id @default(cuid())
-  type      NotificationType
-  message   String
-  read      Boolean           @default(false)
-  userId    String
-  snippetId String?
-  createdAt DateTime          @default(now())
+  id         String            @id @default(cuid())
+  type       NotificationType
+  message    String
+  read       Boolean           @default(false)
+  userId     String
+  fromUserId String?
+  snippetId  String?
+  createdAt  DateTime          @default(now())
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  snippet Snippet? @relation(fields: [snippetId], references: [id], onDelete: SetNull)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromUser User?    @relation("NotificationFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+  snippet  Snippet? @relation(fields: [snippetId], references: [id], onDelete: SetNull)
 
   @@map("notifications")
 }

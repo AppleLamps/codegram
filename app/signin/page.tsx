@@ -51,28 +51,46 @@ export default function SignInPage() {
           <CardDescription>Welcome back to Codegram</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+          <form onSubmit={handleSubmit} className="space-y-4" role="form" aria-label="Sign in to your account">
+            <fieldset>
+              <legend className="sr-only">Account Credentials</legend>
+              <div className="space-y-4">
+                <div>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    aria-label="Email address"
+                    aria-describedby={error ? "form-error" : undefined}
+                    className="focus-ring"
+                  />
+                </div>
+                <div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    aria-label="Password"
+                    aria-describedby={error ? "form-error" : undefined}
+                    className="focus-ring"
+                  />
+                </div>
+              </div>
+            </fieldset>
+            {error && (
+              <div id="form-error" role="alert" aria-live="polite" className="text-sm text-red-500">
+                {error}
+              </div>
+            )}
+            <Button type="submit" className="w-full focus-ring" disabled={loading} aria-describedby={loading ? "loading-status" : undefined}>
               {loading ? "Signing In..." : "Sign In"}
+              {loading && <span id="loading-status" className="sr-only">Please wait while we sign you in</span>}
             </Button>
           </form>
           <div className="mt-4 text-center">

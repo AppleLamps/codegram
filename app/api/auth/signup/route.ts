@@ -1,10 +1,21 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { hashPassword, generateToken } from "@/lib/auth-simple"
+import { z } from "zod"
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, username } = await request.json()
+
+    const schema = z.object({
+      email: z.string().email(),
+      password: z.string().min(8, "Password must be at least 8 characters"),
+      username: z.string().min(3, "Username must be at least 3 characters").max(20),
+    })
+    const parsed = schema.safeParse({ email, password, username })
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({

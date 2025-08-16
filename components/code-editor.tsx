@@ -64,7 +64,7 @@ export function CodeEditor({ value, onChange, language, onLanguageChange, placeh
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "Enter your code here..."}
-          className="min-h-[300px] font-mono text-sm"
+          className="min-h-[300px] font-mono text-sm focus-ring"
           spellCheck={false}
         />
       </div>

@@ -1,11 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth-simple"
+import DOMPurify from "dompurify"
+import { JSDOM } from "jsdom"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const comments = await prisma.comment.findMany({
-      where: { snippetId: params.id },
+      where: {
+        snippetId: params.id,
+        parentId: null, // Only top-level comments
+      },
       include: {
         user: {
           select: {
@@ -29,10 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           orderBy: { createdAt: "asc" },
         },
       },
-      where: {
-        snippetId: params.id,
-        parentId: null, // Only top-level comments
-      },
       orderBy: { createdAt: "desc" },
     })
 
@@ -54,7 +55,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     const { content, parentId } = await request.json()
 
-    if (!content?.trim()) {
+    // Create a DOM window for DOMPurify
+    const window = new JSDOM('').window
+    const purify = DOMPurify(window)
+
+    // Sanitize comment content
+    const sanitizedContent = content ? purify.sanitize(content) : ''
+
+    if (!sanitizedContent?.trim()) {
       return NextResponse.json({ error: "Comment content is required" }, { status: 400 })
     }
 
@@ -69,7 +77,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const comment = await prisma.comment.create({
       data: {
-        content: content.trim(),
+        content: sanitizedContent.trim(),
         userId: user.id,
         snippetId: params.id,
         parentId: parentId || null,

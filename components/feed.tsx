@@ -1,10 +1,12 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { SnippetCard } from "./snippet-card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FeedSkeleton, ButtonLoading, Spinner } from "@/components/ui/loading"
 import { Loader2 } from "lucide-react"
 
 interface FeedProps {
@@ -12,7 +14,7 @@ interface FeedProps {
 }
 
 export function Feed({ initialType = "trending" }: FeedProps) {
-  const { data: session } = useSession()
+  const user = useUser()
   const [snippets, setSnippets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -105,7 +107,7 @@ export function Feed({ initialType = "trending" }: FeedProps) {
   }
 
   const handleLike = async (snippetId: string) => {
-    if (!session) return
+    if (!user) return
 
     try {
       const response = await fetch(`/api/snippets/${snippetId}/like`, {
@@ -145,14 +147,28 @@ export function Feed({ initialType = "trending" }: FeedProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-4">
+        {/* Filter skeleton */}
+        <div className="sticky top-14 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-2 z-40">
+          <div className="grid grid-cols-4 gap-1 mb-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-9 bg-muted/60 rounded-md animate-pulse" />
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <div className="w-[120px] h-8 bg-muted/60 rounded-md animate-pulse" />
+            <div className="w-[100px] h-8 bg-muted/60 rounded-md animate-pulse" />
+          </div>
+        </div>
+        
+        {/* Feed skeleton */}
+        <FeedSkeleton />
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 page-transition">
       <div className="sticky top-14 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-2 z-40">
         <Tabs value={feedType} onValueChange={(value) => setFeedType(value as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-4 h-9">
@@ -165,7 +181,7 @@ export function Feed({ initialType = "trending" }: FeedProps) {
             <TabsTrigger value="popular" className="text-xs">
               Popular
             </TabsTrigger>
-            {session && (
+            {user && (
               <TabsTrigger value="following" className="text-xs">
                 Following
               </TabsTrigger>
@@ -211,37 +227,41 @@ export function Feed({ initialType = "trending" }: FeedProps) {
       </div>
 
       <div className="space-y-0">
-        {snippets.map((snippet) => (
-          <SnippetCard
-            key={snippet.id}
-            snippet={{
-              ...snippet,
-              createdAt: new Date(snippet.createdAt),
-            }}
-            onLike={handleLike}
-            onRemix={handleRemix}
-          />
+        {snippets.map((snippet, index) => (
+          <div key={snippet.id} className="stagger-item">
+            <SnippetCard
+              snippet={{
+                ...snippet,
+                createdAt: new Date(snippet.createdAt),
+              }}
+              onLike={handleLike}
+              onRemix={handleRemix}
+            />
+          </div>
         ))}
       </div>
 
       {snippets.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No snippets found. Try adjusting your filters.</p>
-        </div>
+        <EmptyState
+          type="snippets"
+          title={selectedLanguage !== "all" || selectedTag !== "all" ? "No snippets match your filters" : undefined}
+          description={selectedLanguage !== "all" || selectedTag !== "all" ? "Try adjusting your filters or check back later for new content." : undefined}
+          action={selectedLanguage !== "all" || selectedTag !== "all" ? {
+            label: "Clear Filters",
+            onClick: clearFilters
+          } : undefined}
+        />
       )}
 
       {hasMore && snippets.length > 0 && (
-        <div className="text-center py-4">
-          <Button onClick={loadMore} disabled={loadingMore} variant="ghost" size="sm">
-            {loadingMore ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              "Load More"
-            )}
-          </Button>
+        <div className="text-center py-6">
+          <ButtonLoading 
+            loading={loadingMore} 
+            onClick={loadMore} 
+            className="btn-interactive btn-secondary px-6 py-2 rounded-full hover-lift"
+          >
+            {loadingMore ? "Loading more..." : "Load More Snippets"}
+          </ButtonLoading>
         </div>
       )}
     </div>

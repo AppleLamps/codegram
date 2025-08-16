@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,7 +15,7 @@ import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
 
 export default function EditProfilePage() {
-  const { data: session } = useSession()
+  const user = useUser()
   const params = useParams()
   const router = useRouter()
   const username = params.username as string
@@ -30,13 +30,13 @@ export default function EditProfilePage() {
   })
 
   useEffect(() => {
-    if (session?.user?.username !== username) {
+    if (user?.primaryEmail !== username) {
       router.push(`/${username}`)
       return
     }
 
     fetchUserProfile()
-  }, [session, username])
+  }, [user, username])
 
   const fetchUserProfile = async () => {
     try {
@@ -112,13 +112,14 @@ export default function EditProfilePage() {
           <CardTitle>Profile Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" role="form" aria-label="Edit profile information">
             {/* Profile Picture */}
-            <div className="flex items-center gap-4">
+            <fieldset className="flex items-center gap-4">
+              <legend className="sr-only">Profile Picture</legend>
               <Avatar className="w-20 h-20">
-                <AvatarImage src={session?.user?.image || ""} alt={formData.name} />
+                <AvatarImage src={user?.profileImageUrl || ""} alt={formData.name} />
                 <AvatarFallback className="text-xl">
-                  {formData.name?.charAt(0) || session?.user?.username?.charAt(0)}
+                  {formData.name?.charAt(0) || user?.displayName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -126,10 +127,10 @@ export default function EditProfilePage() {
                   Profile picture is managed through your authentication provider
                 </p>
               </div>
-            </div>
+            </fieldset>
 
             {/* Name */}
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="name">Display Name</Label>
               <Input
                 id="name"
@@ -137,11 +138,14 @@ export default function EditProfilePage() {
                 onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Your display name"
                 maxLength={50}
+                aria-describedby="name-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="name-help" className="text-sm text-muted-foreground">Your public display name (up to 50 characters)</p>
+            </fieldset>
 
             {/* Bio */}
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea
                 id="bio"
@@ -150,12 +154,14 @@ export default function EditProfilePage() {
                 placeholder="Tell us about yourself..."
                 rows={3}
                 maxLength={160}
+                aria-describedby="bio-help"
+                className="focus-ring"
               />
-              <p className="text-xs text-muted-foreground">{formData.bio.length}/160 characters</p>
-            </div>
+              <p id="bio-help" className="text-xs text-muted-foreground">{formData.bio.length}/160 characters</p>
+            </fieldset>
 
             {/* Website */}
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="website">Website</Label>
               <Input
                 id="website"
@@ -163,11 +169,14 @@ export default function EditProfilePage() {
                 value={formData.website}
                 onChange={(e) => handleChange("website", e.target.value)}
                 placeholder="https://yourwebsite.com"
+                aria-describedby="website-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="website-help" className="text-sm text-muted-foreground">Optional: Your personal or professional website</p>
+            </fieldset>
 
             {/* Location */}
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
@@ -175,8 +184,11 @@ export default function EditProfilePage() {
                 onChange={(e) => handleChange("location", e.target.value)}
                 placeholder="City, Country"
                 maxLength={30}
+                aria-describedby="location-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="location-help" className="text-sm text-muted-foreground">Optional: Where you're based (up to 30 characters)</p>
+            </fieldset>
 
             {/* Submit Button */}
             <div className="flex gap-4 pt-4">

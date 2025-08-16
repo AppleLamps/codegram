@@ -2,11 +2,12 @@
 import { useState, useEffect } from "react"
 import type React from "react"
 
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { MessageCircle, Reply } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
@@ -29,7 +30,7 @@ interface CommentSectionProps {
 }
 
 export function CommentSection({ snippetId }: CommentSectionProps) {
-  const { data: session } = useSession()
+  const user = useUser()
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -56,7 +57,7 @@ export function CommentSection({ snippetId }: CommentSectionProps) {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newComment.trim() || !session) return
+    if (!newComment.trim() || !user) return
 
     setIsSubmitting(true)
     try {
@@ -79,7 +80,7 @@ export function CommentSection({ snippetId }: CommentSectionProps) {
 
   const handleSubmitReply = async (e: React.FormEvent, parentId: string) => {
     e.preventDefault()
-    if (!replyContent.trim() || !session) return
+    if (!replyContent.trim() || !user) return
 
     setIsSubmitting(true)
     try {
@@ -117,14 +118,14 @@ export function CommentSection({ snippetId }: CommentSectionProps) {
         <h3 className="text-lg font-semibold">Comments ({comments.length})</h3>
       </div>
 
-      {session && (
+      {user && (
         <Card>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmitComment} className="space-y-4">
               <div className="flex gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={session.user?.image || ""} />
-                  <AvatarFallback>{session.user?.name?.[0] || session.user?.email?.[0]}</AvatarFallback>
+                  <AvatarImage src={user.profileImageUrl || ""} />
+                  <AvatarFallback>{user.displayName?.[0] || user.primaryEmail?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <Textarea
@@ -165,7 +166,7 @@ export function CommentSection({ snippetId }: CommentSectionProps) {
                   </div>
                   <p className="text-sm">{comment.content}</p>
                   <div className="flex items-center gap-2">
-                    {session && (
+                    {user && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -177,7 +178,7 @@ export function CommentSection({ snippetId }: CommentSectionProps) {
                     )}
                   </div>
 
-                  {replyTo === comment.id && session && (
+                  {replyTo === comment.id && user && (
                     <form onSubmit={(e) => handleSubmitReply(e, comment.id)} className="mt-3 space-y-2">
                       <Textarea
                         value={replyContent}
@@ -229,10 +230,10 @@ export function CommentSection({ snippetId }: CommentSectionProps) {
       </div>
 
       {comments.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No comments yet. Be the first to comment!</p>
-        </div>
+        <EmptyState
+          type="comments"
+          className="py-8"
+        />
       )}
     </div>
   )

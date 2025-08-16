@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const language = searchParams.get("language")
   const tag = searchParams.get("tag")
   const page = Number.parseInt(searchParams.get("page") || "1")
-  const limit = Number.parseInt(searchParams.get("limit") || "10")
+  const limit = Math.min(Number.parseInt(searchParams.get("limit") || "10"), 50)
   const skip = (page - 1) * limit
 
   const token = request.cookies.get("auth-token")?.value
@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Handle different feed types
-    if (type === "following" && user?.email) {
+    if (type === "following" && user?.id) {
       const followingUser = await prisma.user.findUnique({
-        where: { email: user.email },
+        where: { id: user.id },
         select: {
           following: {
             select: { followingId: true },
@@ -92,11 +92,11 @@ export async function GET(request: NextRequest) {
             forks: true,
           },
         },
-        likes: user?.email
+        likes: user?.id
           ? {
               where: {
                 user: {
-                  email: user.email,
+                  id: user.id,
                 },
               },
               select: { id: true },

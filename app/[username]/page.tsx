@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SnippetCard } from "@/components/snippet-card"
 import { FollowButton } from "@/components/follow-button"
-import { MapPin, LinkIcon, Calendar, Edit } from "lucide-react"
+import { UserProfileSkeleton, SnippetCardSkeleton } from "@/components/ui/loading"
+import { EmptyState } from "@/components/ui/empty-state"
+import { MapPin, LinkIcon, Calendar, Edit, UserX } from "lucide-react"
 import Link from "next/link"
 
 interface UserProfile {
@@ -36,7 +38,7 @@ interface UserProfile {
 }
 
 export default function UserProfilePage() {
-  const { data: session } = useSession()
+  const currentUser = useUser()
   const params = useParams()
   const username = params.username as string
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -64,11 +66,7 @@ export default function UserProfilePage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse">
-          <div className="h-32 bg-muted rounded-lg mb-6"></div>
-          <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-muted rounded w-2/3 mb-8"></div>
-        </div>
+        <UserProfileSkeleton />
       </div>
     )
   }
@@ -76,8 +74,14 @@ export default function UserProfilePage() {
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
+        <div className="bg-muted/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+          <UserX className="h-10 w-10 text-muted-foreground" />
+        </div>
         <h1 className="text-2xl font-bold mb-4">User not found</h1>
-        <p className="text-muted-foreground">The user you're looking for doesn't exist.</p>
+        <p className="text-muted-foreground">The user you're looking for doesn't exist or may have been removed.</p>
+        <Button asChild className="mt-6">
+          <Link href="/">Back to Home</Link>
+        </Button>
       </div>
     )
   }
@@ -101,7 +105,7 @@ export default function UserProfilePage() {
                 </div>
 
                 <div className="flex gap-2">
-                  {user.isOwnProfile ? (
+                  {currentUser?.primaryEmail === user.email ? (
                     <Button variant="outline" asChild>
                       <Link href={`/${username}/edit`}>
                         <Edit className="w-4 h-4 mr-2" />
@@ -110,10 +114,9 @@ export default function UserProfilePage() {
                     </Button>
                   ) : (
                     <FollowButton
-                      userId={user.id}
                       username={user.username}
-                      initialIsFollowing={user.isFollowing}
-                      onFollowChange={fetchUserProfile}
+                      initialFollowing={user.isFollowing}
+                      onFollowChange={() => fetchUserProfile()}
                     />
                   )}
                 </div>
@@ -186,14 +189,14 @@ export default function UserProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No snippets yet</p>
-              {user.isOwnProfile && (
-                <Button className="mt-4" asChild>
-                  <Link href="/create">Create your first snippet</Link>
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              type="snippets"
+              className="py-16"
+              action={user.isOwnProfile ? {
+                label: "Create your first snippet",
+                href: "/create"
+              } : undefined}
+            />
           )}
         </TabsContent>
 
@@ -220,9 +223,10 @@ export default function UserProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No followers yet</p>
-            </div>
+            <EmptyState
+              type="followers"
+              className="py-12"
+            />
           )}
         </TabsContent>
 
@@ -249,9 +253,10 @@ export default function UserProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Not following anyone yet</p>
-            </div>
+            <EmptyState
+              type="following"
+              className="py-12"
+            />
           )}
         </TabsContent>
       </Tabs>

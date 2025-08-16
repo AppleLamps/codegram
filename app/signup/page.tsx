@@ -52,38 +52,63 @@ export default function SignUpPage() {
           <CardDescription>Sign up for Codegram</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+          <form onSubmit={handleSubmit} className="space-y-4" role="form" aria-label="Create a new account">
+            <fieldset>
+              <legend className="sr-only">Account Information</legend>
+              <div className="space-y-4">
+                <div>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    aria-label="Email address"
+                    aria-describedby={error ? "form-error" : "email-help"}
+                    className="focus-ring"
+                  />
+                  <p id="email-help" className="sr-only">Enter your email address for account creation</p>
+                </div>
+                <div>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    aria-label="Username"
+                    aria-describedby={error ? "form-error" : "username-help"}
+                    className="focus-ring"
+                  />
+                  <p id="username-help" className="sr-only">Choose a unique username for your profile</p>
+                </div>
+                <div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    aria-label="Password"
+                    aria-describedby={error ? "form-error" : "password-help"}
+                    className="focus-ring"
+                  />
+                  <p id="password-help" className="sr-only">Password must be at least 6 characters long</p>
+                </div>
+              </div>
+            </fieldset>
+            {error && (
+              <div id="form-error" role="alert" aria-live="polite" className="text-sm text-red-500">
+                {error}
+              </div>
+            )}
+            <Button type="submit" className="w-full focus-ring" disabled={loading} aria-describedby={loading ? "loading-status" : undefined}>
               {loading ? "Creating Account..." : "Sign Up"}
+              {loading && <span id="loading-status" className="sr-only">Please wait while we create your account</span>}
             </Button>
           </form>
           <div className="mt-4 text-center">

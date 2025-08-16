@@ -70,6 +70,10 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { notificationIds, markAsRead } = body
 
+    if (notificationIds && !Array.isArray(notificationIds)) {
+      return NextResponse.json({ error: "notificationIds must be an array" }, { status: 400 })
+    }
+
     if (notificationIds && Array.isArray(notificationIds)) {
       // Mark specific notifications as read/unread
       await prisma.notification.updateMany({

@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SnippetCard } from "@/components/snippet-card"
+import { SearchResultsSkeleton, ButtonLoading, Spinner } from "@/components/ui/loading"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Search, Users, Hash, Code } from "lucide-react"
 import Link from "next/link"
 import { debounce } from "lodash"
@@ -160,7 +162,7 @@ export default function SearchPage() {
               placeholder="Search snippets, users, and tags..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 text-lg h-12"
+              className="pl-10 text-lg h-12 focus-ring"
             />
           </div>
 
@@ -192,11 +194,21 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {query && <p className="text-muted-foreground">{loading ? "Searching..." : `Search results for "${query}"`}</p>}
+        {query && (
+          <div className="flex items-center gap-2">
+            {loading && <Spinner size="sm" />}
+            <p className="text-muted-foreground">
+              {loading ? "Searching..." : `Search results for "${query}"`}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Search Results */}
       {query.trim() ? (
+        loading && page === 1 ? (
+          <SearchResultsSkeleton />
+        ) : (
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">All</TabsTrigger>
@@ -303,9 +315,11 @@ export default function SearchPage() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No snippets found for "{query}"</p>
-              </div>
+              <EmptyState
+                type="search"
+                title="No snippets found"
+                description={`No snippets match "${query}". Try different keywords or filters.`}
+              />
             )}
           </TabsContent>
 
@@ -345,9 +359,11 @@ export default function SearchPage() {
                 )}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No users found for "{query}"</p>
-              </div>
+              <EmptyState
+                type="users"
+                title="No users found"
+                description={`No users match "${query}". Try a different search term.`}
+              />
             )}
           </TabsContent>
 
@@ -371,24 +387,46 @@ export default function SearchPage() {
                 </div>
                 {results.total > results.tags.length && (
                   <div className="text-center">
-                    <Button onClick={loadMore} disabled={loading}>
-                      {loading ? "Loading..." : "Load More"}
-                    </Button>
+                    <ButtonLoading 
+                      loading={loading} 
+                      onClick={loadMore}
+                      className="btn-secondary px-6 py-2 rounded-full"
+                    >
+                      {loading ? "Loading more..." : "Load More Tags"}
+                    </ButtonLoading>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No tags found for "{query}"</p>
-              </div>
+              <EmptyState
+                type="tags"
+                title="No tags found"
+                description={`No tags match "${query}". Try a different search term.`}
+              />
             )}
           </TabsContent>
         </Tabs>
+        )
       ) : (
-        <div className="text-center py-12">
-          <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Search Codegram</h3>
-          <p className="text-muted-foreground">Find snippets, users, and tags</p>
+        <div className="text-center py-16 space-y-6">
+          <EmptyState
+            type="search"
+            title="Search Codegram"
+            description="Discover code snippets, connect with developers, and explore trending topics"
+          />
+          <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+            {["React", "Python", "JavaScript", "TypeScript", "CSS"].map((term) => (
+              <Button 
+                key={term} 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setQuery(term)}
+                className="text-xs hover-lift"
+              >
+                {term}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
     </div>

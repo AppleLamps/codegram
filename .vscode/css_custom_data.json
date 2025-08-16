@@ -1,0 +1,49 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@import",
+      "description": "Import external stylesheets or Tailwind CSS modules."
+    },
+    {
+      "name": "@tailwind",
+      "description": "Use the @tailwind directive to insert Tailwind's base, components, utilities and variants styles into your CSS."
+    },
+    {
+      "name": "@apply",
+      "description": "Use @apply to inline any existing utility classes into your own custom CSS."
+    },
+    {
+      "name": "@layer",
+      "description": "Use the @layer directive to tell Tailwind which 'bucket' a set of custom styles belong to. Valid layers: base, components, utilities."
+    },
+    {
+      "name": "@variants",
+      "description": "You can generate variants of your own utilities by wrapping their definitions in the @variants directive."
+    },
+    {
+      "name": "@responsive",
+      "description": "You can generate responsive variants of your own classes by wrapping their definitions in the @responsive directive."
+    },
+    {
+      "name": "@screen",
+      "description": "The @screen directive allows you to create media queries that reference your breakpoints by name."
+    },
+    {
+      "name": "@custom-variant",
+      "description": "Define custom variants for Tailwind CSS v4. Used to create custom pseudo-class variants."
+    },
+    {
+      "name": "@theme",
+      "description": "Use the @theme directive in Tailwind CSS v4 to define theme values inline. Supports 'inline' parameter for CSS custom properties."
+    },
+    {
+      "name": "@config",
+      "description": "Configure Tailwind CSS settings directly in CSS files (Tailwind v4 feature)."
+    },
+    {
+      "name": "@plugin",
+      "description": "Load Tailwind CSS plugins directly in CSS files (Tailwind v4 feature)."
+    }
+  ]
+}

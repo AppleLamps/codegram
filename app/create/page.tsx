@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,12 +14,13 @@ import { CodeEditor } from "@/components/code-editor"
 import { SyntaxHighlighter } from "@/components/syntax-highlighter"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
-import { X, Plus } from "lucide-react"
+import { X, Plus, AlertCircle } from "lucide-react"
 
 export default function CreateSnippet() {
-  const { data: session, status } = useSession()
+  const user = useUser()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -32,12 +33,8 @@ export default function CreateSnippet() {
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
 
-  if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
-
-  if (status === "unauthenticated") {
-    router.push("/auth/signin")
+  if (!user) {
+    router.push("/handler/sign-in")
     return null
   }
 
@@ -57,6 +54,8 @@ export default function CreateSnippet() {
     if (!formData.title.trim() || !formData.code.trim()) return
 
     setIsSubmitting(true)
+    setError(null)
+    
     try {
       const response = await fetch("/api/snippets", {
         method: "POST",
@@ -67,11 +66,16 @@ export default function CreateSnippet() {
       if (response.ok) {
         const snippet = await response.json()
         router.push(`/snippet/${snippet.id}`)
+      } else {
+        const errorData = await response.json().catch(() => ({ message: "Failed to create snippet" }))
+        setError(errorData.message || "Failed to create snippet. Please try again.")
       }
     } catch (error) {
       console.error("Failed to create snippet:", error)
+      setError("Network error. Please check your connection and try again.")
+    } finally {
+      setIsSubmitting(false)
     }
-    setIsSubmitting(false)
   }
 
   return (
@@ -81,8 +85,8 @@ export default function CreateSnippet() {
           <CardTitle>Create New Snippet</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-6" role="form" aria-label="Create new code snippet">
+            <fieldset className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input
                 id="title"
@@ -90,10 +94,13 @@ export default function CreateSnippet() {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Give your snippet a descriptive title"
                 required
+                aria-required="true"
+                aria-describedby={error ? "form-error" : undefined}
+                className="focus-ring"
               />
-            </div>
+            </fieldset>
 
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
@@ -101,8 +108,11 @@ export default function CreateSnippet() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe what your code does (optional)"
                 rows={3}
+                aria-describedby="description-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="description-help" className="text-sm text-muted-foreground">Optional description to help others understand your code</p>
+            </fieldset>
 
             <Tabs defaultValue="edit" className="w-full">
               <TabsList>
@@ -131,41 +141,72 @@ export default function CreateSnippet() {
               </TabsContent>
             </Tabs>
 
-            <div className="space-y-2">
-              <Label>Tags (optional)</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tags (optional)</legend>
+              <div className="flex flex-wrap gap-2 mb-2" role="list" aria-label="Current tags">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                  <Badge key={tag} variant="secondary" className="flex items-center gap-1" role="listitem">
                     {tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="ml-1">
-                      <X className="h-3 w-3" />
+                    <button 
+                      type="button" 
+                      onClick={() => removeTag(tag)} 
+                      className="ml-1 focus-ring rounded" 
+                      aria-label={`Remove ${tag} tag`}
+                    >
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </Badge>
                 ))}
               </div>
               <div className="flex gap-2">
                 <Input
+                  id="new-tag"
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Add a tag"
                   onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                   maxLength={20}
+                  aria-describedby="tags-help"
+                  aria-label="New tag input"
+                  className="focus-ring"
                 />
-                <Button type="button" onClick={addTag} variant="outline" size="sm" disabled={tags.length >= 5}>
-                  <Plus className="h-4 w-4" />
+                <Button 
+                  type="button" 
+                  onClick={addTag} 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={tags.length >= 5}
+                  aria-label="Add tag"
+                  className="focus-ring"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">Add up to 5 tags to help others discover your snippet</p>
-            </div>
+              <p id="tags-help" className="text-sm text-muted-foreground">Add up to 5 tags to help others discover your snippet</p>
+            </fieldset>
 
-            <div className="flex items-center space-x-2">
+            <fieldset className="flex items-center space-x-2">
               <Switch
                 id="public"
                 checked={formData.isPublic}
                 onCheckedChange={(checked) => setFormData({ ...formData, isPublic: checked })}
+                aria-describedby="public-help"
               />
               <Label htmlFor="public">Make this snippet public</Label>
-            </div>
+              <p id="public-help" className="sr-only">Toggle to make your snippet visible to all users or keep it private</p>
+            </fieldset>
+
+            {error && (
+              <div 
+                id="form-error"
+                role="alert" 
+                aria-live="polite"
+                className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md"
+              >
+                <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" aria-hidden="true" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
 
             <div className="flex gap-4">
               <Button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.code.trim()}>

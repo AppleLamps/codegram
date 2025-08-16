@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Code2, Check, X } from "lucide-react"
 
 export default function Onboarding() {
-  const { data: session, status } = useSession()
+  const user = useUser()
   const router = useRouter()
   const [formData, setFormData] = useState({
     username: "",
@@ -25,10 +25,10 @@ export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin")
+    if (!user) {
+      router.push("/handler/sign-in")
     }
-  }, [status, router])
+  }, [user, router])
 
   const checkUsername = async (username: string) => {
     if (username.length < 3) {
@@ -91,8 +91,8 @@ export default function Onboarding() {
           <CardDescription>Set up your Codegram profile to get started</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4" role="form" aria-label="Complete your profile">
+            <fieldset className="space-y-2">
               <Label htmlFor="username">Username *</Label>
               <div className="relative">
                 <Input
@@ -102,21 +102,26 @@ export default function Onboarding() {
                   value={formData.username}
                   onChange={handleUsernameChange}
                   required
+                  aria-required="true"
                   minLength={3}
                   maxLength={20}
+                  aria-describedby={usernameStatus === "taken" ? "username-error" : "username-help"}
+                  aria-invalid={usernameStatus === "taken"}
+                  className="focus-ring"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2" aria-live="polite">
                   {usernameStatus === "checking" && (
-                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" aria-label="Checking username availability" />
                   )}
-                  {usernameStatus === "available" && <Check className="h-4 w-4 text-green-500" />}
-                  {usernameStatus === "taken" && <X className="h-4 w-4 text-red-500" />}
+                  {usernameStatus === "available" && <Check className="h-4 w-4 text-green-500" aria-label="Username available" />}
+                  {usernameStatus === "taken" && <X className="h-4 w-4 text-red-500" aria-label="Username taken" />}
                 </div>
               </div>
-              {usernameStatus === "taken" && <p className="text-sm text-red-500">Username is already taken</p>}
-            </div>
+              {usernameStatus === "taken" && <p id="username-error" className="text-sm text-red-500" role="alert">Username is already taken</p>}
+              <p id="username-help" className="text-sm text-muted-foreground">Choose a unique username (3-20 characters)</p>
+            </fieldset>
 
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea
                 id="bio"
@@ -124,10 +129,13 @@ export default function Onboarding() {
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 maxLength={160}
+                aria-describedby="bio-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="bio-help" className="text-sm text-muted-foreground">{formData.bio.length}/160 characters</p>
+            </fieldset>
 
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="website">Website</Label>
               <Input
                 id="website"
@@ -135,10 +143,13 @@ export default function Onboarding() {
                 placeholder="https://yourwebsite.com"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                aria-describedby="website-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="website-help" className="text-sm text-muted-foreground">Optional: Your personal or professional website</p>
+            </fieldset>
 
-            <div className="space-y-2">
+            <fieldset className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
@@ -146,8 +157,11 @@ export default function Onboarding() {
                 placeholder="San Francisco, CA"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                aria-describedby="location-help"
+                className="focus-ring"
               />
-            </div>
+              <p id="location-help" className="text-sm text-muted-foreground">Optional: Where you're based</p>
+            </fieldset>
 
             <Button type="submit" className="w-full" disabled={usernameStatus !== "available" || isSubmitting}>
               {isSubmitting ? "Creating Profile..." : "Complete Profile"}

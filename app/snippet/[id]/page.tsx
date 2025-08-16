@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { SnippetCard } from "@/components/snippet-card"
 import { CommentSection } from "@/components/comment-section"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import Link from "next/link"
 
 export default function SnippetPage() {
   const params = useParams()
-  const { data: session } = useSession()
+  const user = useUser()
   const [snippet, setSnippet] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -34,7 +34,7 @@ export default function SnippetPage() {
   }, [params.id])
 
   const handleLike = async (snippetId: string) => {
-    if (!session) return
+    if (!user) return
 
     try {
       const response = await fetch(`/api/snippets/${snippetId}/like`, {
@@ -63,16 +63,25 @@ export default function SnippetPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center" role="status" aria-live="polite">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <span className="sr-only">Loading snippet details...</span>
+          Loading...
+        </div>
+      </div>
+    )
   }
 
   if (!snippet) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" role="main">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Snippet not found</h1>
-          <Button asChild>
-            <Link href="/">Go Home</Link>
+          <p className="text-muted-foreground mb-6">The snippet you're looking for doesn't exist or has been removed.</p>
+          <Button asChild className="focus-ring">
+            <Link href="/" aria-label="Return to the home page">Go Home</Link>
           </Button>
         </div>
       </div>
@@ -80,30 +89,32 @@ export default function SnippetPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
-        <Button variant="ghost" asChild>
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+    <main className="container mx-auto px-4 py-8 max-w-4xl" role="main">
+      <nav className="mb-6" role="navigation" aria-label="Breadcrumb">
+        <Button variant="ghost" asChild className="focus-ring">
+          <Link href="/" aria-label="Go back to the main feed">
+            <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
             Back to Feed
           </Link>
         </Button>
-      </div>
+      </nav>
 
       <div className="space-y-8">
-        <SnippetCard
-          snippet={{
-            ...snippet,
-            createdAt: new Date(snippet.createdAt),
-          }}
-          onLike={handleLike}
-          onRemix={handleRemix}
-        />
+        <section aria-label="Code snippet details">
+          <SnippetCard
+            snippet={{
+              ...snippet,
+              createdAt: new Date(snippet.createdAt),
+            }}
+            onLike={handleLike}
+            onRemix={handleRemix}
+          />
+        </section>
 
-        <div id="comments">
+        <section id="comments" aria-label="Comments and discussions">
           <CommentSection snippetId={snippet.id} />
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth-simple"
 import { prisma } from "@/lib/prisma"
+import DOMPurify from "dompurify"
+import { JSDOM } from "jsdom"
 
 export async function GET(request: NextRequest, { params }: { params: { username: string } }) {
   try {
@@ -92,6 +94,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { userna
     const body = await request.json()
     const { name, bio, website, location } = body
 
+    // Create a DOM window for DOMPurify
+    const window = new JSDOM('').window
+    const purify = DOMPurify(window)
+
+    // Sanitize user inputs
+    const sanitizedName = name ? purify.sanitize(name) : null
+    const sanitizedBio = bio ? purify.sanitize(bio) : null
+    const sanitizedWebsite = website ? purify.sanitize(website) : null
+    const sanitizedLocation = location ? purify.sanitize(location) : null
+
     // Check if user owns this profile
     const user = await prisma.user.findUnique({
       where: { username },
@@ -104,10 +116,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { userna
     const updatedUser = await prisma.user.update({
       where: { id: currentUser.id },
       data: {
-        name,
-        bio,
-        website,
-        location,
+        name: sanitizedName,
+        bio: sanitizedBio,
+        website: sanitizedWebsite,
+        location: sanitizedLocation,
       },
     })
 

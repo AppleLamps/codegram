@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth-simple"
 import { prisma } from "@/lib/prisma"
+import DOMPurify from "dompurify"
+import { JSDOM } from "jsdom"
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value
@@ -13,13 +15,22 @@ export async function POST(request: NextRequest) {
   try {
     const { username, bio, website, location } = await request.json()
 
+    // Create a DOM window for DOMPurify
+    const window = new JSDOM('').window
+    const purify = DOMPurify(window)
+
+    // Sanitize user inputs
+    const sanitizedBio = bio ? purify.sanitize(bio) : null
+    const sanitizedWebsite = website ? purify.sanitize(website) : null
+    const sanitizedLocation = location ? purify.sanitize(location) : null
+
     // Check if username is available
     const existingUser = await prisma.user.findUnique({
       where: { username },
     })
 
     if (existingUser && existingUser.id !== user.id) {
-      return NextResponse.json({ error: "Username taken" }, { status: 400 })
+      return NextResponse.json({ error: "Invalid username or username unavailable" }, { status: 400 })
     }
 
     // Update user profile
@@ -27,9 +38,9 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: {
         username,
-        bio: bio || null,
-        website: website || null,
-        location: location || null,
+        bio: sanitizedBio,
+        website: sanitizedWebsite,
+        location: sanitizedLocation,
       },
     })
 

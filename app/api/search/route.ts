@@ -111,30 +111,41 @@ export async function GET(request: NextRequest) {
 
     // Calculate total for pagination
     if (type !== "all") {
-      const totalCount = await prisma[type === "snippets" ? "snippet" : type === "users" ? "user" : "tag"].count({
-        where:
-          type === "snippets"
-            ? {
-                OR: [
-                  { title: { contains: query, mode: "insensitive" } },
-                  { description: { contains: query, mode: "insensitive" } },
-                  { code: { contains: query, mode: "insensitive" } },
-                ],
-                isPublic: true,
-                ...(language && { language }),
-              }
-            : type === "users"
-              ? {
-                  OR: [
-                    { username: { contains: query, mode: "insensitive" } },
-                    { name: { contains: query, mode: "insensitive" } },
-                    { bio: { contains: query, mode: "insensitive" } },
-                  ],
-                }
-              : {
-                  name: { contains: query, mode: "insensitive" },
-                },
-      })
+      let totalCount: number;
+      if (type === "snippets") {
+        const countWhere: any = {
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+            { code: { contains: query, mode: "insensitive" } },
+          ],
+          isPublic: true,
+        }
+        
+        if (language) {
+          countWhere.language = language
+        }
+        
+        totalCount = await prisma.snippet.count({
+          where: countWhere,
+        });
+      } else if (type === "users") {
+        totalCount = await prisma.user.count({
+          where: {
+            OR: [
+              { username: { contains: query, mode: "insensitive" } },
+              { name: { contains: query, mode: "insensitive" } },
+              { bio: { contains: query, mode: "insensitive" } },
+            ],
+          },
+        });
+      } else {
+         totalCount = await prisma.tag.count({
+           where: {
+             name: { contains: query, mode: "insensitive" },
+           },
+         });
+       }
       results.total = totalCount
     }
 

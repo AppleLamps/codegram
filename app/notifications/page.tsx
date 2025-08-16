@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@stackframe/stack"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Bell, Heart, MessageCircle, UserPlus, Code, Check, CheckCheck } from "lucide-react"
+import { Header } from "@/components/header"
+import { NotificationSkeleton } from "@/components/ui/loading"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Bell, Heart, MessageCircle, UserPlus, Code, Check, CheckCheck, BellOff } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
@@ -30,17 +33,17 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const { data: session } = useSession()
+  const user = useUser()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [filter, setFilter] = useState<"all" | "unread">("all")
 
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       fetchNotifications()
     }
-  }, [session, filter])
+  }, [user, filter])
 
   const fetchNotifications = async () => {
     try {
@@ -95,7 +98,7 @@ export default function NotificationsPage() {
     }
   }
 
-  if (!session?.user) {
+  if (!user) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Please sign in</h1>
@@ -106,28 +109,33 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 bg-muted rounded-lg"></div>
-          ))}
-        </div>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="space-content">
+          <div className="container mx-auto px-4">
+            <NotificationSkeleton />
+          </div>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          {unreadCount > 0 && (
-            <p className="text-muted-foreground">
-              {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <main className="space-content">
+        <div className="container mx-auto px-4 max-w-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-display font-bold">Notifications</h1>
+              {unreadCount > 0 && (
+                <p className="text-muted-foreground text-body-large">
+                  {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
 
         <div className="flex gap-2">
           <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>
@@ -209,18 +217,15 @@ export default function NotificationsPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            {filter === "unread" ? "No unread notifications" : "No notifications yet"}
-          </h3>
-          <p className="text-muted-foreground">
-            {filter === "unread"
-              ? "You're all caught up!"
-              : "When people interact with your snippets, you'll see notifications here."}
-          </p>
-        </div>
+        <EmptyState
+          type="notifications"
+          title={filter === "unread" ? "No unread notifications" : undefined}
+          description={filter === "unread" ? "You're all caught up!" : undefined}
+          icon={filter === "unread" ? <BellOff className="w-12 h-12 text-muted-foreground" /> : undefined}
+        />
       )}
+        </div>
+      </main>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth-simple"
 import { prisma } from "@/lib/prisma"
+import DOMPurify from "dompurify"
+import { JSDOM } from "jsdom"
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value
@@ -13,12 +15,22 @@ export async function POST(request: NextRequest) {
   try {
     const { title, description, code, language, isPublic, tags } = await request.json()
 
+    // Create a DOM window for DOMPurify
+    const window = new JSDOM('').window
+    const purify = DOMPurify(window)
+
+    // Sanitize user inputs
+    const sanitizedTitle = purify.sanitize(title)
+    const sanitizedDescription = description ? purify.sanitize(description) : null
+    const sanitizedCode = purify.sanitize(code)
+    const sanitizedTags = tags?.map((tag: string) => purify.sanitize(tag)) || []
+
     // Create snippet
     const snippet = await prisma.snippet.create({
       data: {
-        title,
-        description: description || null,
-        code,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        code: sanitizedCode,
         language,
         isPublic,
         authorId: user.id,
@@ -26,8 +38,8 @@ export async function POST(request: NextRequest) {
     })
 
     // Handle tags
-    if (tags && tags.length > 0) {
-      for (const tagName of tags) {
+    if (sanitizedTags && sanitizedTags.length > 0) {
+      for (const tagName of sanitizedTags) {
         // Find or create tag
         let tag = await prisma.tag.findUnique({
           where: { name: tagName.toLowerCase() },
