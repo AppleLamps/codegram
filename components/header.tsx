@@ -277,28 +277,30 @@ export function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-72 p-3 bg-background/98 backdrop-blur-xl border border-border/20 shadow-2xl shadow-primary/10 rounded-2xl" align="end" forceMount role="menu" aria-label="User account menu">
                     <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg mb-2" role="presentation">
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
                         <AvatarImage src={user.profileImageUrl || ""} alt={`${user.displayName || user.primaryEmail} profile picture`} />
                         <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
                           {user.displayName?.charAt(0) || user.primaryEmail?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col space-y-1 leading-none flex-1 min-w-0">
-                        {user.displayName && <p className="font-semibold text-sm">{user.displayName}</p>}
-                        {user.primaryEmail && (
-                          <p className="truncate text-xs text-muted-foreground">{user.primaryEmail}</p>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col space-y-1 leading-none">
+                          {user.displayName && <p className="font-semibold text-sm truncate">{user.displayName}</p>}
+                          {user.primaryEmail && (
+                            <p className="truncate text-xs text-muted-foreground">{user.primaryEmail}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={`/profile`} role="menuitem">
+                      <Link href={`/${user.username}`} role="menuitem">
                         <User className="mr-2 h-4 w-4" aria-hidden="true" />
                         <span>Profile</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/settings`} role="menuitem">
+                      <Link href={`/${user.username}/edit`} role="menuitem">
                         <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                         <span>Settings</span>
                       </Link>
