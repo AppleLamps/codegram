@@ -30,6 +30,7 @@ export function Header() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
+  const profileUsername = user ? (("username" in user) ? (user as any).username : (user as any).primaryEmail?.split("@")[0] ?? "") : ""
 
   useEffect(() => {
     if (user) {
@@ -294,13 +295,13 @@ export function Header() {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={`/${user.username}`} role="menuitem">
+                      <Link href={`/${profileUsername}`} role="menuitem">
                         <User className="mr-2 h-4 w-4" aria-hidden="true" />
                         <span>Profile</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/${user.username}/edit`} role="menuitem">
+                      <Link href={`/${profileUsername}/edit`} role="menuitem">
                         <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                         <span>Settings</span>
                       </Link>
